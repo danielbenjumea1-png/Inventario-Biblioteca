@@ -2,8 +2,10 @@ import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font
-from pyzbar.pyzbar import decode
 from PIL import Image
+import cv2
+import numpy as np
+from pyzxing import BarCodeReader
 
 # Colores
 COLOR_VERDE = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
@@ -40,10 +42,19 @@ if uploaded_file:
 
         if img_file:
             img = Image.open(img_file)
-            decoded_objects = decode(img)
+            img_np = np.array(img)
 
-            if decoded_objects:
-                codigo = decoded_objects[0].data.decode("utf-8")
+            # Convertir imagen para OpenCV
+            img_cv = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+
+            # Usar pyzxing para decodificar
+            reader = BarCodeReader()
+            temp_path = "temp_image.png"
+            img.save(temp_path)
+            result = reader.decode(temp_path)
+
+            if result and len(result) > 0:
+                codigo = result[0]['parsed']
                 st.write(f"✅ Código detectado: **{codigo}**")
 
                 if codigo in codigo_a_fila:
