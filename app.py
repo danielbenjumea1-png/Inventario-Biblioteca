@@ -4,9 +4,8 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font
 from pyzbar.pyzbar import decode
 from PIL import Image
-import io
 
-# Configuración de colores
+# Colores
 COLOR_VERDE = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
 COLOR_MORADO = PatternFill(start_color="800080", end_color="800080", fill_type="solid")
 
@@ -16,12 +15,10 @@ st.write("Escanea códigos con la cámara del celular. Si el código existe, se 
 # Subir archivo Excel
 uploaded_file = st.file_uploader("Sube tu archivo Excel del inventario", type=["xlsx"])
 if uploaded_file:
-    # Guardar archivo temporal
     excel_path = "inventario.xlsx"
     with open(excel_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
 
-    # Cargar datos
     wb = load_workbook(excel_path)
     sheet = wb.active
     df = pd.read_excel(excel_path)
@@ -36,10 +33,8 @@ if uploaded_file:
     if not codigo_columna:
         st.error("No se encontró ninguna columna que contenga 'codigo'.")
     else:
-        # Diccionario para búsqueda rápida
         codigo_a_fila = {str(row[codigo_columna]): idx+2 for idx, row in df.iterrows()}
 
-        # Captura con cámara
         st.subheader("Escanea el código")
         img_file = st.camera_input("Toma una foto del código")
 
@@ -52,14 +47,12 @@ if uploaded_file:
                 st.write(f"✅ Código detectado: **{codigo}**")
 
                 if codigo in codigo_a_fila:
-                    # Código existente → subrayar en verde
                     fila = codigo_a_fila[codigo]
                     celda = f"A{fila}"
                     sheet[celda].fill = COLOR_VERDE
                     sheet[celda].font = Font(bold=True)
                     st.success(f"Código {codigo} encontrado y marcado en verde.")
                 else:
-                    # Código nuevo → agregar al final y subrayar en morado
                     nueva_fila = sheet.max_row + 1
                     sheet[f"A{nueva_fila}"] = codigo
                     sheet[f"A{nueva_fila}"].fill = COLOR_MORADO
@@ -67,14 +60,11 @@ if uploaded_file:
                     st.warning(f"Código {codigo} agregado como nuevo y marcado en morado.")
 
                 wb.save(excel_path)
-
             else:
                 st.error("No se detectó ningún código en la imagen.")
 
-        # Mostrar inventario actualizado
         st.subheader("Inventario actualizado")
         st.dataframe(pd.read_excel(excel_path))
 
-        # Botón para descargar el archivo actualizado
         with open(excel_path, "rb") as f:
             st.download_button("Descargar Excel actualizado", f, file_name="inventario_actualizado.xlsx")
